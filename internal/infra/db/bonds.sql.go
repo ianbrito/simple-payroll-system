@@ -67,8 +67,8 @@ func (q *Queries) GetBonds(ctx context.Context) ([]Bond, error) {
 	return items, nil
 }
 
-const insertBond = `-- name: InsertBond :exec
-INSERT INTO bonds (id, name, created_at, updated_at) VALUES ($1, $2, $3, $4)
+const insertBond = `-- name: InsertBond :one
+INSERT INTO bonds (id, name, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id, name, created_at, updated_at
 `
 
 type InsertBondParams struct {
@@ -78,12 +78,19 @@ type InsertBondParams struct {
 	UpdatedAt time.Time
 }
 
-func (q *Queries) InsertBond(ctx context.Context, arg InsertBondParams) error {
-	_, err := q.db.ExecContext(ctx, insertBond,
+func (q *Queries) InsertBond(ctx context.Context, arg InsertBondParams) (Bond, error) {
+	row := q.db.QueryRowContext(ctx, insertBond,
 		arg.ID,
 		arg.Name,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
-	return err
+	var i Bond
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

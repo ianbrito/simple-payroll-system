@@ -1,5 +1,5 @@
--- name: InsertBond :exec
-INSERT INTO bonds (id, name, created_at, updated_at) VALUES ($1, $2, $3, $4);
+-- name: InsertBond :one
+INSERT INTO bonds (id, name, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING *;
 
 -- name: GetBondByID :one
 SELECT * FROM bonds WHERE id = $1;
