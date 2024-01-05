@@ -19,6 +19,22 @@ func (q *Queries) DeleteRoleByID(ctx context.Context, id string) error {
 	return err
 }
 
+const getRoleByFields = `-- name: GetRoleByFields :one
+SELECT id, name, created_at, updated_at FROM roles WHERE name = $1
+`
+
+func (q *Queries) GetRoleByFields(ctx context.Context, name string) (Role, error) {
+	row := q.db.QueryRowContext(ctx, getRoleByFields, name)
+	var i Role
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getRoleByID = `-- name: GetRoleByID :one
 SELECT id, name, created_at, updated_at FROM roles WHERE id = $1
 `
@@ -67,8 +83,8 @@ func (q *Queries) GetRoles(ctx context.Context) ([]Role, error) {
 	return items, nil
 }
 
-const insertRole = `-- name: InsertRole :exec
-INSERT INTO roles (id, name, created_at, updated_at) VALUES ($1, $2, $3, $4)
+const insertRole = `-- name: InsertRole :one
+INSERT INTO roles (id, name, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id, name, created_at, updated_at
 `
 
 type InsertRoleParams struct {
@@ -78,12 +94,19 @@ type InsertRoleParams struct {
 	UpdatedAt time.Time
 }
 
-func (q *Queries) InsertRole(ctx context.Context, arg InsertRoleParams) error {
-	_, err := q.db.ExecContext(ctx, insertRole,
+func (q *Queries) InsertRole(ctx context.Context, arg InsertRoleParams) (Role, error) {
+	row := q.db.QueryRowContext(ctx, insertRole,
 		arg.ID,
 		arg.Name,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
-	return err
+	var i Role
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
