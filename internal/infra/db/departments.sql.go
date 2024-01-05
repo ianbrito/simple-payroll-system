@@ -19,6 +19,28 @@ func (q *Queries) DeleteDepartmentByID(ctx context.Context, id string) error {
 	return err
 }
 
+const getDepartmentByFields = `-- name: GetDepartmentByFields :one
+SELECT id, name, acronym, created_at, updated_at FROM departments WHERE name = $1 AND acronym = $2
+`
+
+type GetDepartmentByFieldsParams struct {
+	Name    string
+	Acronym string
+}
+
+func (q *Queries) GetDepartmentByFields(ctx context.Context, arg GetDepartmentByFieldsParams) (Department, error) {
+	row := q.db.QueryRowContext(ctx, getDepartmentByFields, arg.Name, arg.Acronym)
+	var i Department
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Acronym,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getDepartmentByID = `-- name: GetDepartmentByID :one
 SELECT id, name, acronym, created_at, updated_at FROM departments WHERE id = $1
 `
@@ -69,8 +91,8 @@ func (q *Queries) GetDepartments(ctx context.Context) ([]Department, error) {
 	return items, nil
 }
 
-const insertDepartment = `-- name: InsertDepartment :exec
-INSERT INTO departments (id, name, acronym, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)
+const insertDepartment = `-- name: InsertDepartment :one
+INSERT INTO departments (id, name, acronym, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, acronym, created_at, updated_at
 `
 
 type InsertDepartmentParams struct {
@@ -81,13 +103,21 @@ type InsertDepartmentParams struct {
 	UpdatedAt time.Time
 }
 
-func (q *Queries) InsertDepartment(ctx context.Context, arg InsertDepartmentParams) error {
-	_, err := q.db.ExecContext(ctx, insertDepartment,
+func (q *Queries) InsertDepartment(ctx context.Context, arg InsertDepartmentParams) (Department, error) {
+	row := q.db.QueryRowContext(ctx, insertDepartment,
 		arg.ID,
 		arg.Name,
 		arg.Acronym,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
-	return err
+	var i Department
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Acronym,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
