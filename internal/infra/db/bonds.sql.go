@@ -19,6 +19,22 @@ func (q *Queries) DeleteBondByID(ctx context.Context, id string) error {
 	return err
 }
 
+const getBondByFields = `-- name: GetBondByFields :one
+SELECT id, name, created_at, updated_at FROM bonds WHERE name = $1
+`
+
+func (q *Queries) GetBondByFields(ctx context.Context, name string) (Bond, error) {
+	row := q.db.QueryRowContext(ctx, getBondByFields, name)
+	var i Bond
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getBondByID = `-- name: GetBondByID :one
 SELECT id, name, created_at, updated_at FROM bonds WHERE id = $1
 `

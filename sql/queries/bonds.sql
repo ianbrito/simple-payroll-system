@@ -7,5 +7,8 @@ SELECT * FROM bonds WHERE id = $1;
 -- name: GetBonds :many
 SELECT * FROM bonds ORDER BY created_at;
 
+-- name: GetBondByFields :one
+SELECT * FROM bonds WHERE name = $1;
+
 -- name: DeleteBondByID :exec
 DELETE FROM bonds WHERE id = $1;
